@@ -1,29 +1,32 @@
-package com.tasktrack.tasks.domain.oauth2.dto.impl;
+package com.tasktrack.tasks.domain.oauth2User.dto.impl;
 
-import com.tasktrack.tasks.domain.oauth2.dto.OAuth2Response;
+import com.tasktrack.tasks.domain.oauth2User.dto.OAuth2Response;
 
 import java.util.Map;
 
-public class GoogleResponseImpl implements OAuth2Response {
+public class GithubResponseImpl implements OAuth2Response {
 
     private final Map<String, Object> attributes;
 
-    public GoogleResponseImpl(Map<String, Object> attributes) {
+    public GithubResponseImpl(Map<String, Object> attributes) {
         this.attributes = attributes;
     }
 
     @Override
     public String getProvider() {
-        return "google";
+        return "github";
     }
 
     @Override
     public String getProviderId() {
-        return (String) attributes.get("sub");
+        return (String) attributes.get("id");
     }
 
     @Override
     public String getEmail() {
+        if ((String) attributes.get("email") == null) {
+
+        }
         return (String) attributes.get("email");
     }
 

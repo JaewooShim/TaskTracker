@@ -1,4 +1,4 @@
-package com.tasktrack.tasks.domain.oauth2.dto;
+package com.tasktrack.tasks.domain.oauth2User.dto;
 
 public interface OAuth2Response {
     String getProvider();
