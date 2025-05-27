@@ -1,6 +1,6 @@
-package com.tasktrack.tasks.domain.oauth2.dto.impl;
+package com.tasktrack.tasks.domain.oauth2User.dto.impl;
 
-import com.tasktrack.tasks.domain.oauth2.dto.OAuth2Response;
+import com.tasktrack.tasks.domain.oauth2User.dto.OAuth2Response;
 
 import java.util.Map;
 
