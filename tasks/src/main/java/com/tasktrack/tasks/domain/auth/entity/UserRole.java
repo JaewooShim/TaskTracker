@@ -1,5 +1,8 @@
-package com.tasktrack.tasks.domain.oauth2.entity;
+package com.tasktrack.tasks.domain.auth.entity;
 
+import lombok.Getter;
+
+@Getter
 public enum UserRole {
     ADMIN("ROLE_ADMIN"),
     USER("ROLE_USER");
@@ -8,9 +11,5 @@ public enum UserRole {
 
     UserRole(String description) {
         this.description = description;
-    }
-
-    public String getDescription() {
-        return this.description;
     }
 }
