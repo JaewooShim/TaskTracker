@@ -1,4 +1,4 @@
-package com.tasktrack.tasks.domain.oauth2User.entity;
+package com.tasktrack.tasks.domain.auth.entity;
 
 import lombok.Getter;
 

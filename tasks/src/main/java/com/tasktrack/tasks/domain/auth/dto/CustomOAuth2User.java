@@ -1,6 +1,8 @@
-package com.tasktrack.tasks.domain.oauth2User.dto;
+package com.tasktrack.tasks.domain.auth.dto;
 
-import com.tasktrack.tasks.domain.oauth2User.entity.UserRole;
+import com.tasktrack.tasks.domain.auth.entity.UserEntity;
+import com.tasktrack.tasks.domain.auth.entity.UserRole;
+import lombok.Builder;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -12,22 +14,22 @@ import java.util.Map;
 
 public class CustomOAuth2User implements OAuth2User {
 
-    @Getter
-    private final String username;
+    private final UserEntity userEntity;
 
-    private final String name;
+    private Map<String, Object> attributes;
 
-    private final UserRole userRole;
+    public CustomOAuth2User(UserEntity userEntity) {
+        this.userEntity = userEntity;
+    }
 
-    public CustomOAuth2User(String username, String name, UserRole userRole) {
-        this.username = username;
-        this.name = name;
-        this.userRole = userRole;
+    public CustomOAuth2User(UserEntity userEntity, Map<String, Object> attributes) {
+        this.userEntity = userEntity;
+        this.attributes = attributes;
     }
 
     @Override
     public Map<String, Object> getAttributes() {
-        return null;
+        return attributes;
     }
 
     @Override
@@ -36,7 +38,7 @@ public class CustomOAuth2User implements OAuth2User {
         list.add(new GrantedAuthority() {
             @Override
             public String getAuthority() {
-                return userRole.toString();
+                return userEntity.getUserRole().toString();
             }
         });
         return list;
@@ -44,7 +46,10 @@ public class CustomOAuth2User implements OAuth2User {
 
     @Override
     public String getName() {
-        return this.name;
+        return userEntity.getName();
     }
 
+    public String getUserName() {
+        return userEntity.getUsername();
+    }
 }
