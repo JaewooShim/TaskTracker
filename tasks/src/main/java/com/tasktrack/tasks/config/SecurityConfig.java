@@ -1,8 +1,12 @@
 package com.tasktrack.tasks.config;
 
-import com.tasktrack.tasks.domain.oauth2User.service.CustomOauth2UserService;
+import com.tasktrack.tasks.domain.auth.repository.UserRepository;
+import com.tasktrack.tasks.domain.auth.service.CustomOauth2UserService;
+import com.tasktrack.tasks.domain.auth.service.CustomSuccessHandler;
+import com.tasktrack.tasks.domain.auth.service.JWTFilter;
 import com.tasktrack.tasks.util.JWTUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -26,11 +30,19 @@ public class SecurityConfig {
 
     private final JWTUtil jwtUtil;
 
+    private final UserRepository userRepository;
+
     public SecurityConfig(CustomOauth2UserService customOauth2UserService, CustomSuccessHandler customSuccessHandler,
-                          JWTUtil jwtUtil) {
+                          JWTUtil jwtUtil, UserRepository userRepository) {
         this.customOauth2UserService = customOauth2UserService;
         this.customSuccessHandler = customSuccessHandler;
         this.jwtUtil = jwtUtil;
+        this.userRepository = userRepository;
+    }
+
+    @Bean
+    public JWTFilter jwtFilter() {
+        return new JWTFilter(jwtUtil, userRepository);
     }
 
     @Bean
@@ -38,6 +50,7 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable);
         http.formLogin(AbstractHttpConfigurer::disable);
         http.httpBasic(AbstractHttpConfigurer::disable);
+        http.logout(AbstractHttpConfigurer::disable);
 
         http.cors(corsCustomizer ->
                 corsCustomizer.configurationSource(new CorsConfigurationSource() {
@@ -60,19 +73,25 @@ public class SecurityConfig {
                     }
                 }));
         
-        http.addFilterAfter(new JWTFilter(jwtUtil), OAuth2LoginAuthenticationFilter.class);
+        http.addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);
 
         http.oauth2Login((auth) -> auth
                 .userInfoEndpoint((uie) -> uie
                         .userService(customOauth2UserService))
                 .successHandler(customSuccessHandler));
 
-        http.authorizeHttpRequests((auth) ->
-                auth.requestMatchers("/").permitAll()
-                        .anyRequest().authenticated());
+        http.authorizeHttpRequests((auth) -> auth
+                .requestMatchers("/", "/api/util/**").permitAll()
+                .anyRequest().authenticated());
+
+        http.exceptionHandling(exception ->
+                exception.authenticationEntryPoint(((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                })));
 
         http.sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
         return http.build();
     }
 }

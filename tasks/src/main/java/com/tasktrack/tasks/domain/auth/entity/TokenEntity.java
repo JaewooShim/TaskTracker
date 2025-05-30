@@ -1,4 +1,4 @@
-package com.tasktrack.tasks.domain.oauth2User.entity;
+package com.tasktrack.tasks.domain.auth.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,14 +10,13 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-public class UserEntity {
+public class TokenEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String username;
-    private String name;
-    private String email;
-    private UserRole userRole;
+    private String refresh;
+    private String expiration;
 }

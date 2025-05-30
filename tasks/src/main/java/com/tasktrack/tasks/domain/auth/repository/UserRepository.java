@@ -1,6 +1,6 @@
-package com.tasktrack.tasks.domain.oauth2User.repository;
+package com.tasktrack.tasks.domain.auth.repository;
 
-import com.tasktrack.tasks.domain.oauth2User.entity.UserEntity;
+import com.tasktrack.tasks.domain.auth.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
