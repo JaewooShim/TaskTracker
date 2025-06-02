@@ -4,12 +4,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Getter
-@Setter
+@NoArgsConstructor
 public class TokenEntity {
 
     @Id
@@ -19,4 +21,11 @@ public class TokenEntity {
     private String username;
     private String refresh;
     private String expiration;
+
+    @Builder
+    public TokenEntity(String username, String refresh, String expiration) {
+        this.username = username;
+        this.refresh = refresh;
+        this.expiration = expiration;
+    }
 }

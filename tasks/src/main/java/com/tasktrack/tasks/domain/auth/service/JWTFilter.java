@@ -45,14 +45,28 @@ public class JWTFilter extends OncePerRequestFilter {
         // get access token
 //        String accessToken = request.getHeader("access");
         String accessToken = null;
+
+        // no cookies available
+        if (request.getCookies() == null) {
+            PrintWriter writer = response.getWriter();
+            writer.print("Sign in to proceed");
+
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
+
         for (Cookie cookie: request.getCookies()) {
             if (cookie.getName().equals("access")) {
                 accessToken = cookie.getValue();
                 break;
             }
         }
+
         if (accessToken == null) { // if access token doesn't exist, move on to the next filter
-            filterChain.doFilter(request, response);
+            PrintWriter writer = response.getWriter();
+            writer.print("Access token not found");
+
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
@@ -61,7 +75,7 @@ public class JWTFilter extends OncePerRequestFilter {
             jwtUtil.isExpired(accessToken);
         } catch (ExpiredJwtException e) {
             PrintWriter writer = response.getWriter();
-            writer.print("access token expired");
+            writer.print("Access token expired");
 
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
@@ -78,13 +92,13 @@ public class JWTFilter extends OncePerRequestFilter {
         }
 
         String username = jwtUtil.getUsername(accessToken);
-        String role = jwtUtil.getRole(accessToken);
+//        String role = jwtUtil.getRole(accessToken);
         Optional<UserEntity> optionalUser = userRepository.findByUsername(username);
 
         // this user not in db
         if (optionalUser.isEmpty()) {
             PrintWriter writer = response.getWriter();
-            writer.print("Invalid user");
+            writer.print("User not found");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
