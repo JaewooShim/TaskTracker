@@ -9,12 +9,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.swing.text.html.Option;
 import java.util.Date;
-import java.util.Optional;
 
 @Service
 public class ReissueService {
@@ -30,8 +31,11 @@ public class ReissueService {
 
     @Transactional
     public ResponseEntity<?> reissue(HttpServletRequest request, HttpServletResponse response) {
-        // get refresh token
         String refresh = null;
+
+        if (request.getCookies() == null) {
+            return new ResponseEntity<>("please sign in again", HttpStatus.BAD_REQUEST);
+        }
 
         for (Cookie cookie: request.getCookies()) {
             if (cookie.getName().equals("refresh")) {
@@ -41,13 +45,14 @@ public class ReissueService {
         }
 
         if (refresh == null) {
-            return new ResponseEntity<>("refresh token cannot be found", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("please sign in again", HttpStatus.BAD_REQUEST);
         }
-
+        System.out.println("hello " + refresh);
         // expiration check
         try {
             jwtUtil.isExpired(refresh);
         } catch (Exception e) {
+//            if (tokenRepository.existsByRefresh(refresh)) tokenRepository.deleteByRefresh(refresh);
             return new ResponseEntity<>("refresh token expired", HttpStatus.BAD_REQUEST);
         }
 
@@ -66,23 +71,34 @@ public class ReissueService {
         tokenRepository.deleteByRefresh(refresh);
 
         // save newly created refresh token into db
-        TokenEntity tokenEntity = new TokenEntity();
-        tokenEntity.setUsername(username);
-        tokenEntity.setRefresh(newRefresh);
-        tokenEntity.setExpiration(new Date(System.currentTimeMillis() + 43200000L).toString());
+        TokenEntity tokenEntity = TokenEntity.builder()
+                .username(username)
+                .refresh(newRefresh)
+                .expiration(new Date(System.currentTimeMillis() + 43200000L).toString())
+                .build();
+
         tokenRepository.save(tokenEntity);
 
         // response
 //        response.setHeader("access", newAccess);
-        response.addCookie(createCookie("access", newAccess));
-        response.addCookie(createCookie("refresh", newRefresh)); // refresh rotation
-
+        response.addCookie(createCookie("access", newAccess, 1200));
+        response.addCookie(createCookie("refresh", newRefresh, 43200)); // refresh rotation
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    private Cookie createCookie(String key, String value) {
+    // check whether the current user is logged in
+    public ResponseEntity<?> checkAuth() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() &&
+        !(authentication instanceof AnonymousAuthenticationToken)) {
+            return new ResponseEntity<>("Authenticated", HttpStatus.OK);
+        }
+        return new ResponseEntity<>("Not authenticated", HttpStatus.BAD_REQUEST);
+    }
+
+    private Cookie createCookie(String key, String value, int expiry) {
         Cookie cookie = new Cookie(key, value);
-        cookie.setMaxAge(12 * 60 * 60);
+        cookie.setMaxAge(expiry);
         // cookie.setSecure(true);
         cookie.setPath("/");
         cookie.setHttpOnly(true);

@@ -38,30 +38,31 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String role = authentication.getAuthorities().iterator().next().getAuthority();
 
         // generate access(10min) nd refresh(12hr) token
-        String access = jwtUtil.generateJwt("access", username, role, 600000L);
+        String access = jwtUtil.generateJwt("access", username, role, 60000L);
         String refresh = jwtUtil.generateJwt("refresh", username, role, 43200000L);
         // save refresh token in db
         createTokenEntity(username, refresh, 43200000L);
 
-        response.addCookie(createCookie("access", access));
+        response.addCookie(createCookie("access", access, 1200));
 //        response.setHeader("access", access);
-        response.addCookie(createCookie("refresh", refresh));
+        response.addCookie(createCookie("refresh", refresh, 43200));
         response.setStatus(HttpStatus.OK.value());
         response.sendRedirect("http://localhost:5173/");
     }
 
     private void createTokenEntity(String username, String refresh, Long expiredMs) {
         Date date = new Date(System.currentTimeMillis() + expiredMs);
-        TokenEntity tokenEntity = new TokenEntity();
-        tokenEntity.setUsername(username);
-        tokenEntity.setRefresh(refresh);
-        tokenEntity.setExpiration(date.toString());
+        TokenEntity tokenEntity = TokenEntity.builder()
+                .username(username)
+                .refresh(refresh)
+                .expiration(date.toString())
+                .build();
         tokenRepository.save(tokenEntity);
     }
 
-    private Cookie createCookie(String key, String value) {
+    private Cookie createCookie(String key, String value, int expiry) {
         Cookie cookie = new Cookie(key, value);
-        cookie.setMaxAge(12 * 60 * 60);
+        cookie.setMaxAge(expiry);
         // cookie.setSecure(true);
         cookie.setPath("/");
         cookie.setHttpOnly(true);

@@ -5,9 +5,6 @@ import com.tasktrack.tasks.util.JWTUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,8 +35,8 @@ public class LogOutService {
 
         // refresh null check
         if (refresh == null) {
-//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            response.setStatus(HttpStatus.BAD_REQUEST.value());
+    //            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
@@ -48,32 +45,34 @@ public class LogOutService {
             jwtUtil.isExpired(refresh);
         } catch (Exception e) {
 //            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
         if (!jwtUtil.getCategory(refresh).equals("refresh")) {
 //            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
         if (!tokenRepository.existsByRefresh(refresh)) {
 //            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
+
         tokenRepository.deleteByRefresh(refresh);
 
-        deleteCookie(response, "refresh", "/");
-        deleteCookie(response, "access", "/");
-        response.setStatus(HttpStatus.OK.value());
+        deleteCookie(response, "refresh");
+        deleteCookie(response, "access");
+        response.setStatus(HttpServletResponse.SC_OK);
     }
-    private void deleteCookie(HttpServletResponse response, String name, String path) {
+
+    private void deleteCookie(HttpServletResponse response, String name) {
         Cookie cookie = new Cookie(name, null);
         cookie.setMaxAge(0);
         cookie.setHttpOnly(true);
-        cookie.setPath(path);
+        cookie.setPath("/");
         response.addCookie(cookie);
     }
 }

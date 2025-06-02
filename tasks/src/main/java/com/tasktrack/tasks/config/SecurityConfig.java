@@ -85,7 +85,8 @@ public class SecurityConfig {
                 .anyRequest().authenticated());
 
         http.exceptionHandling(exception ->
-                exception.authenticationEntryPoint(((request, response, authException) -> {
+                exception.authenticationEntryPoint(((request, response,
+                                                     authException) -> {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 })));
 
