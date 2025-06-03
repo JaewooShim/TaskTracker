@@ -1,9 +1,12 @@
 package com.tasktrack.tasks.domain.auth.entity;
 
+import com.tasktrack.tasks.domain.taskList.entity.TaskList;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Entity
 @Getter
@@ -20,6 +23,9 @@ public class UserEntity {
 
     @Enumerated(EnumType.STRING)
     private UserRole userRole;
+
+    @OneToMany(mappedBy = "user", cascade = {CascadeType.REMOVE, CascadeType.PERSIST}, orphanRemoval = true)
+    private List<TaskList> taskLists;
 
     @Builder
     public UserEntity(String username, String name, String email, UserRole userRole) {

@@ -2,7 +2,7 @@ package com.tasktrack.tasks.domain.auth.service;
 
 import com.tasktrack.tasks.domain.auth.dto.CustomOAuth2User;
 import com.tasktrack.tasks.domain.auth.entity.UserEntity;
-import com.tasktrack.tasks.domain.auth.entity.UserRole;
+import com.tasktrack.tasks.domain.auth.repository.TokenRepository;
 import com.tasktrack.tasks.domain.auth.repository.UserRepository;
 import com.tasktrack.tasks.util.JWTUtil;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -28,9 +28,12 @@ public class JWTFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
 
-    public JWTFilter(JWTUtil jwtUtil, UserRepository userRepository) {
+    private final TokenRepository tokenRepository;
+
+    public JWTFilter(JWTUtil jwtUtil, UserRepository userRepository, TokenRepository tokenRepository) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.tokenRepository = tokenRepository;
     }
 
     @Override
@@ -55,18 +58,25 @@ public class JWTFilter extends OncePerRequestFilter {
             return;
         }
 
+        String refreshToken = null;
+
         for (Cookie cookie: request.getCookies()) {
-            if (cookie.getName().equals("access")) {
+            if ("access".equals(cookie.getName())) {
                 accessToken = cookie.getValue();
-                break;
+            } else if ("refresh".equals(cookie.getName())) {
+                refreshToken = cookie.getValue();
             }
         }
 
-        if (accessToken == null) { // if access token doesn't exist, move on to the next filter
+        if (accessToken == null) { // no access token, unauthorized
             PrintWriter writer = response.getWriter();
-            writer.print("Access token not found");
-
+            writer.print("Sign in to proceed");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+            // in case user manually deletes access token, delete the refresh
+            if (refreshToken != null && tokenRepository.existsByRefresh(refreshToken)) {
+                tokenRepository.deleteByRefresh(refreshToken);
+            }
             return;
         }
 
@@ -92,7 +102,6 @@ public class JWTFilter extends OncePerRequestFilter {
         }
 
         String username = jwtUtil.getUsername(accessToken);
-//        String role = jwtUtil.getRole(accessToken);
         Optional<UserEntity> optionalUser = userRepository.findByUsername(username);
 
         // this user not in db

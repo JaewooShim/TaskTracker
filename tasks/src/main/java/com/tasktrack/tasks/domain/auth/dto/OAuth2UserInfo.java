@@ -38,8 +38,8 @@ public record OAuth2UserInfo(
         return OAuth2UserInfo.builder()
                 .name((String) attributes.get("name"))
                 .email((String) attributes.get("email"))
-                .username("github_" + ((String) attributes.get("id")))
-                .providerId((String) attributes.get("id"))
+                .username("github_" + (attributes.get("id").toString()))
+                .providerId(attributes.get("id").toString())
                 .attributes(attributes)
                 .build();
     }

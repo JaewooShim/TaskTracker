@@ -30,6 +30,7 @@ public class TaskListMapperImpl implements TaskListMapper {
                         .map(tasks -> tasks.stream().map(taskMapper::fromDTO).toList())
                         .orElse(null),
                 null,
+                null,
                 null
         );
     }
