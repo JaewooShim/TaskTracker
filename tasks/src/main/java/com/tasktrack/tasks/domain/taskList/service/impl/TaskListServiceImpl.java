@@ -1,10 +1,14 @@
 package com.tasktrack.tasks.domain.taskList.service.impl;
 
+import com.tasktrack.tasks.domain.auth.dto.CustomOAuth2User;
+import com.tasktrack.tasks.domain.auth.entity.UserEntity;
+import com.tasktrack.tasks.domain.auth.repository.UserRepository;
 import com.tasktrack.tasks.domain.taskList.dto.TaskListDTO;
 import com.tasktrack.tasks.domain.taskList.entity.TaskList;
 import com.tasktrack.tasks.domain.taskList.mapper.TaskListMapper;
 import com.tasktrack.tasks.domain.taskList.repository.TaskListRepository;
 import com.tasktrack.tasks.domain.taskList.service.TaskListService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,18 +24,23 @@ public class TaskListServiceImpl implements TaskListService {
 
     private final TaskListMapper taskListMapper;
 
-    public TaskListServiceImpl(TaskListRepository taskListRepository, TaskListMapper taskListMapper) {
+    private final UserRepository userRepository;
+
+    public TaskListServiceImpl(TaskListRepository taskListRepository, TaskListMapper taskListMapper,
+                               UserRepository userRepository) {
         this.taskListRepository = taskListRepository;
         this.taskListMapper = taskListMapper;
+        this.userRepository = userRepository;
     }
 
     @Override
-    public List<TaskListDTO> listTaskLists() {
-        return taskListRepository.findAll().stream().map(taskListMapper::toDTO).toList();
+    public List<TaskListDTO> listTaskLists(Long userId) {
+        return taskListRepository.findByUserId(userId).stream().map(taskListMapper::toDTO).toList();
     }
 
     @Override
-    public TaskListDTO createTaskList(TaskListDTO taskListDTO) {
+    public TaskListDTO createTaskList(Long userId,
+                                      TaskListDTO taskListDTO) {
         if (taskListDTO.id() != null) { // already created tasklist
             throw new IllegalArgumentException("Task list already has an ID");
         }
@@ -39,6 +48,10 @@ public class TaskListServiceImpl implements TaskListService {
         if (taskListDTO.title() == null || taskListDTO.title().isBlank()) {
             throw new IllegalArgumentException("Task list title must be present");
         }
+
+        // find the currently logged in user
+        UserEntity userEntity = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         LocalDateTime now = LocalDateTime.now();
         TaskList newTaskList = taskListRepository.save(
@@ -48,20 +61,21 @@ public class TaskListServiceImpl implements TaskListService {
                         taskListDTO.description(),
                         null,
                         now,
-                        now
+                        now,
+                        userEntity
                 )
         );
         return taskListMapper.toDTO(newTaskList);
     }
 
     @Override
-    public Optional<TaskListDTO> getTaskList(UUID id) {
-        return taskListRepository.findById(id).map(taskListMapper::toDTO);
+    public Optional<TaskListDTO> getTaskList(Long userId, UUID id) {
+        return taskListRepository.findByUserIdAndId(userId, id).map(taskListMapper::toDTO);
     }
 
     @Transactional
     @Override
-    public TaskListDTO updateTaskList(UUID taskListId, TaskListDTO taskListDTO) {
+    public TaskListDTO updateTaskList(Long userId, UUID taskListId, TaskListDTO taskListDTO) {
         if (taskListDTO.id() == null) {
             throw new IllegalArgumentException("Task list must have an ID");
         }
@@ -70,7 +84,7 @@ public class TaskListServiceImpl implements TaskListService {
             throw new IllegalArgumentException("Attempting to change task list ID, this is not permitted");
         }
 
-        TaskList existingTaskList = taskListRepository.findById(taskListId).orElseThrow(() ->
+        TaskList existingTaskList = taskListRepository.findByUserIdAndId(userId, taskListId).orElseThrow(() ->
                 new IllegalArgumentException("task list not found"));
 
         existingTaskList.setTitle(taskListDTO.title());
@@ -80,8 +94,8 @@ public class TaskListServiceImpl implements TaskListService {
     }
 
     @Override
-    public void deleteTaskList(UUID taskListId) {
-        taskListRepository.deleteById(taskListId);
+    public void deleteTaskList(Long userId, UUID taskListId) {
+        taskListRepository.deleteByUserIdAndId(userId, taskListId);
     }
 
 }
