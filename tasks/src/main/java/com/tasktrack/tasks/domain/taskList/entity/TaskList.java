@@ -1,5 +1,6 @@
 package com.tasktrack.tasks.domain.taskList.entity;
 
+import com.tasktrack.tasks.domain.auth.entity.UserEntity;
 import com.tasktrack.tasks.domain.task.entity.Task;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,8 +15,8 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode
-@ToString
+@EqualsAndHashCode(exclude = {"user", "tasks"})
+@ToString(exclude = {"user", "tasks"})
 public class TaskList {
 
     @Id
@@ -37,4 +38,8 @@ public class TaskList {
 
     @Column(name = "updated", nullable = false)
     private LocalDateTime updated;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
 }
