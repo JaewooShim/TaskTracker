@@ -54,6 +54,7 @@ public class TaskServiceImpl implements TaskService {
         TaskList taskList = taskListRepository.findById(taskListId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid task list ID"));
         LocalDateTime now = LocalDateTime.now();
+
         Task task = new Task(
                 null,
                 taskDTO.title(),

@@ -1,5 +1,6 @@
 package com.tasktrack.tasks.config;
 
+import com.tasktrack.tasks.domain.auth.repository.TokenRepository;
 import com.tasktrack.tasks.domain.auth.repository.UserRepository;
 import com.tasktrack.tasks.domain.auth.service.CustomOauth2UserService;
 import com.tasktrack.tasks.domain.auth.service.CustomSuccessHandler;
@@ -32,17 +33,19 @@ public class SecurityConfig {
 
     private final UserRepository userRepository;
 
+    private final TokenRepository tokenRepository;
     public SecurityConfig(CustomOauth2UserService customOauth2UserService, CustomSuccessHandler customSuccessHandler,
-                          JWTUtil jwtUtil, UserRepository userRepository) {
+                          JWTUtil jwtUtil, UserRepository userRepository, TokenRepository tokenRepository) {
         this.customOauth2UserService = customOauth2UserService;
         this.customSuccessHandler = customSuccessHandler;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.tokenRepository = tokenRepository;
     }
 
     @Bean
     public JWTFilter jwtFilter() {
-        return new JWTFilter(jwtUtil, userRepository);
+        return new JWTFilter(jwtUtil, userRepository, tokenRepository);
     }
 
     @Bean

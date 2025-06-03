@@ -26,8 +26,14 @@ public class LogOutService {
     public void logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
         // get refresh token
         String refresh = null;
+
+        if (request.getCookies() == null) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
         for (Cookie cookie : request.getCookies()) {
-            if (cookie.getName().equals("refresh")) {
+            if ("refresh".equals(cookie.getName())) {
                 refresh = cookie.getValue();
                 break;
             }

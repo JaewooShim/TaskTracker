@@ -3,7 +3,6 @@ package com.tasktrack.tasks.domain.auth.service;
 import com.tasktrack.tasks.domain.auth.entity.TokenEntity;
 import com.tasktrack.tasks.domain.auth.repository.TokenRepository;
 import com.tasktrack.tasks.util.JWTUtil;
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -38,7 +37,7 @@ public class ReissueService {
         }
 
         for (Cookie cookie: request.getCookies()) {
-            if (cookie.getName().equals("refresh")) {
+            if ("refresh".equals(cookie.getName())) {
                 refresh = cookie.getValue();
                 break;
             }
@@ -47,12 +46,12 @@ public class ReissueService {
         if (refresh == null) {
             return new ResponseEntity<>("please sign in again", HttpStatus.BAD_REQUEST);
         }
-        System.out.println("hello " + refresh);
+
         // expiration check
         try {
             jwtUtil.isExpired(refresh);
         } catch (Exception e) {
-//            if (tokenRepository.existsByRefresh(refresh)) tokenRepository.deleteByRefresh(refresh);
+            if (tokenRepository.existsByRefresh(refresh)) tokenRepository.deleteByRefresh(refresh);
             return new ResponseEntity<>("refresh token expired", HttpStatus.BAD_REQUEST);
         }
 
