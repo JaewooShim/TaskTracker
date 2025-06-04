@@ -1,7 +1,9 @@
 package com.tasktrack.tasks.config;
 
+import com.tasktrack.tasks.domain.auth.repository.CustomClientRegistrationRepo;
 import com.tasktrack.tasks.domain.auth.repository.TokenRepository;
 import com.tasktrack.tasks.domain.auth.repository.UserRepository;
+import com.tasktrack.tasks.domain.auth.service.CustomOAuth2ClientService;
 import com.tasktrack.tasks.domain.auth.service.CustomOauth2UserService;
 import com.tasktrack.tasks.domain.auth.service.CustomSuccessHandler;
 import com.tasktrack.tasks.domain.auth.service.JWTFilter;
@@ -10,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -34,13 +37,25 @@ public class SecurityConfig {
     private final UserRepository userRepository;
 
     private final TokenRepository tokenRepository;
+
+    private final CustomOAuth2ClientService customOAuth2ClientService;
+
+    private final JdbcTemplate jdbcTemplate;
+
+    private final CustomClientRegistrationRepo customClientRegistrationRepo;
+
     public SecurityConfig(CustomOauth2UserService customOauth2UserService, CustomSuccessHandler customSuccessHandler,
-                          JWTUtil jwtUtil, UserRepository userRepository, TokenRepository tokenRepository) {
+                          JWTUtil jwtUtil, UserRepository userRepository, TokenRepository tokenRepository,
+                          CustomOAuth2ClientService customOAuth2ClientService, JdbcTemplate jdbcTemplate,
+                          CustomClientRegistrationRepo customClientRegistrationRepo) {
         this.customOauth2UserService = customOauth2UserService;
         this.customSuccessHandler = customSuccessHandler;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
+        this.customOAuth2ClientService = customOAuth2ClientService;
+        this.jdbcTemplate = jdbcTemplate;
+        this.customClientRegistrationRepo = customClientRegistrationRepo;
     }
 
     @Bean
@@ -81,6 +96,9 @@ public class SecurityConfig {
         http.oauth2Login((auth) -> auth
                 .userInfoEndpoint((uie) -> uie
                         .userService(customOauth2UserService))
+                .clientRegistrationRepository(customClientRegistrationRepo.clientRegistrationRepository())
+                .authorizedClientService(customOAuth2ClientService.oAuth2AuthorizedClientService(jdbcTemplate,
+                        customClientRegistrationRepo.clientRegistrationRepository()))
                 .successHandler(customSuccessHandler));
 
         http.authorizeHttpRequests((auth) -> auth
